@@ -8,7 +8,7 @@ from recommender import books, recommend
 # --------------------------------
 
 st.set_page_config(
-    page_title="Novel Recommendation System",
+    page_title="NovelNest",
     page_icon="📚",
     layout="wide"
 )
@@ -18,7 +18,7 @@ st.set_page_config(
 # TITLE
 # --------------------------------
 
-st.title("📚 Novel Recommendation System")
+st.title("📚 NovelNest")
 
 st.write(
     "Discover novels based on your interests and reading preferences."
