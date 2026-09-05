@@ -2,55 +2,85 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Load the novel dataset
+
+# --------------------------------
+# LOAD DATASET
+# --------------------------------
+
 books = pd.read_csv("data/novels.csv")
 
-# Combine important information about each novel
+
+# --------------------------------
+# CLEAN DATA
+# --------------------------------
+
+books["title"] = books["title"].fillna("Unknown Title")
+books["author"] = books["author"].fillna("Unknown Author")
+books["genre"] = books["genre"].fillna("Fiction")
+books["description"] = books["description"].fillna("")
+
+
+# --------------------------------
+# COMBINE BOOK INFORMATION
+# --------------------------------
+
 books["content"] = (
-    books["genre"].fillna("") + " " +
-    books["description"].fillna("") + " " +
-    books["author"].fillna("")
+    books["genre"] + " " +
+    books["description"] + " " +
+    books["author"]
 )
 
-# Create the TF-IDF vectorizer
-vectorizer = TfidfVectorizer(stop_words="english")
 
-# Convert novel content into numerical vectors
-tfidf_matrix = vectorizer.fit_transform(books["content"])
+# --------------------------------
+# CREATE TF-IDF MATRIX
+# --------------------------------
 
-# Calculate similarity between all novels
-similarity_matrix = cosine_similarity(tfidf_matrix)
+vectorizer = TfidfVectorizer(
+    stop_words="english"
+)
 
-print("Similarity matrix shape:", similarity_matrix.shape)
+tfidf_matrix = vectorizer.fit_transform(
+    books["content"]
+)
 
+
+# --------------------------------
+# CALCULATE COSINE SIMILARITY
+# --------------------------------
+
+similarity_matrix = cosine_similarity(
+    tfidf_matrix
+)
+
+
+# --------------------------------
+# RECOMMENDATION FUNCTION
+# --------------------------------
 
 def recommend(title, number_of_recommendations=5):
 
-    # Find the selected novel
     matching_books = books[
         books["title"].str.lower() == title.lower()
     ]
 
-    # Check if the novel exists
     if matching_books.empty:
         return []
 
-    # Get the index of the selected novel
     book_index = matching_books.index[0]
 
-    # Get similarity scores
     similarity_scores = list(
-        enumerate(similarity_matrix[book_index])
+        enumerate(
+            similarity_matrix[book_index]
+        )
     )
 
-    # Sort from most similar to least similar
     similarity_scores = sorted(
         similarity_scores,
         key=lambda x: x[1],
         reverse=True
     )
 
-    # Remove the selected novel itself
+    # Remove the selected book
     similarity_scores = similarity_scores[
         1:number_of_recommendations + 1
     ]
@@ -64,20 +94,44 @@ def recommend(title, number_of_recommendations=5):
             "author": books.iloc[index]["author"],
             "genre": books.iloc[index]["genre"],
             "rating": books.iloc[index]["rating"],
+            "year": books.iloc[index]["year"],
+            "cover_id": books.iloc[index]["cover_id"],
             "similarity": round(score, 3)
         })
 
     return recommendations
 
 
-# Test the recommendation system
-recommendations = recommend("The Hobbit")
+# --------------------------------
+# TEST
+# --------------------------------
 
-print("\nRecommendations for The Hobbit:\n")
+if __name__ == "__main__":
 
-for novel in recommendations:
     print(
-        f"{novel['title']} - "
-        f"{novel['author']} - "
-        f"Similarity: {novel['similarity']}"
+        "Number of novels:",
+        len(books)
     )
+
+    print(
+        "TF-IDF matrix shape:",
+        tfidf_matrix.shape
+    )
+
+    recommendations = recommend(
+        books.iloc[0]["title"]
+    )
+
+    print(
+        f"\nRecommendations for "
+        f"{books.iloc[0]['title']}:\n"
+    )
+
+    for novel in recommendations:
+
+        print(
+            f"{novel['title']} - "
+            f"{novel['author']} - "
+            f"Similarity: "
+            f"{novel['similarity']}"
+        )
